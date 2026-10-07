@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free AI Video Creator</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --card: #151b31;
+    --text: #eef2ff;
+    --muted: #a9b3d1;
+    --accent: #6d5efc;
+    --accent-2: #00d4ff;
+    --border: #2a3355;
+    --success: #22c55e;
+    --danger: #ff7a7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: radial-gradient(circle at top left, #1a2350, var(--bg) 45%);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { width: min(1000px, 100%); margin: 0 auto; }
+  h1 { text-align: center; margin-bottom: 8px; }
+  .sub { text-align: center; color: var(--muted); margin-bottom: 24px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    margin-bottom: 20px;
+  }
+  label { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 6px; }
+  input, textarea, select {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0f1428; color: var(--text); font: inherit; outline: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(0,212,255,.12);
+  }
+  textarea { min-height: 100px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  button, .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px; border-radius: 12px; border: none;
+    cursor: pointer; font-weight: 700; font-size: 1rem;
+    text-decoration: none; transition: transform .15s, opacity .15s;
+  }
+  button:hover, .btn:hover { transform: translateY(-1px); opacity: .95; }
+  .btn-primary { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #07101f; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-download {
+    background: linear-gradient(90deg, #22c55e, #00d4ff);
+    color: #051018;
+    font-size: 1.05rem;
+    padding: 14px 26px;
+    box-shadow: 0 8px 24px rgba(34,197,94,.35);
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  #status { margin-top: 14px; font-size: 0.95rem; color: var(--success); min-height: 24px; }
+  canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); background: #000; display: block; }
+  video { width: 100%; border-radius: 12px; margin-top: 12px; background: #000; }
+  .hidden { display: none !important; }
+  .download-box {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(34,197,94,.4);
+    background: linear-gradient(180deg, rgba(34,197,94,.08), rgba(0,212,255,.04));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .download-box h3 { font-size: 1.1rem; margin-bottom: 4px; }
+  .download-box p { color: var(--muted); font-size: 0.9rem; }
+  .download-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .file-info { font-size: 0.85rem; color: var(--muted); }
+  @media (max-width: 700px) {
+    .row, .row-3 { grid-template-columns: 1fr; }
+    .btn-download { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Free AI Video Creator</h1>
+  <p class="sub">Generate AI scenes and download the final video. No login, no credits.</p>
+
+  <div class="card">
+    <div style="margin-bottom:16px">
+      <label for="prompt">Video description</label>
+      <textarea id="prompt" placeholder="Example: A futuristic city at sunset with flying cars, cinematic lighting">A futuristic city at sunset with flying cars, cinematic lighting</textarea>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="style">Style</label>
+        <select id="style">
+          <option>Cinematic</option>
+          <option>Realistic</option>
+          <option>Anime</option>
+          <option>3D Render</option>
+          <option>Cyberpunk</option>
+          <option>Watercolor</option>
+        </select>
+      </div>
+      <div>
+        <label for="aspect">Aspect ratio</label>
+        <select id="aspect">
+          <option value="16:9">16:9 (YouTube)</option>
+          <option value="9:16">9:16 (Shorts/Reels)</option>
+          <option value="1:1">1:1 (Square)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row-3">
+      <div>
+        <label for="scenes">Scenes</label>
+        <select id="scenes">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+      <div>
+        <label for="duration">Seconds per scene</label>
+        <select id="duration">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div>
+        <label for="fps">FPS</label>
+        <select id="fps">
+          <option value="24">24</option>
+          <option value="30" selected>30</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="generateBtn" type="button">Generate Video</button>
+      <button class="btn-secondary" id="clearBtn" type="button">Clear</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <video id="video" controls playsinline class="hidden"></video>
+
+    <div id="downloadBox" class="download-box hidden">
+      <div>
+        <h3>✅ Your video is ready</h3>
+        <p>Download it below. If the direct download does not start, use “Open in new tab” and save from there.</p>
+      </div>
+      <div class="download-actions">
+        <a id="downloadLink" class="btn btn-download" download>⬇ Download Video</a>
+        <button id="openTabBtn" class="btn-secondary" type="button">Open in new tab</button>
+        <button id="copyDataBtn" class="btn-secondary" type="button">Copy data URL</button>
+      </div>
+      <div class="file-info" id="fileInfo"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const promptEl = $("prompt");
+  const styleEl = $("style");
+  const aspectEl = $("aspect");
+  const scenesEl = $("scenes");
+  const durationEl = $("duration");
+  const fpsEl = $("fps");
+  const generateBtn = $("generateBtn");
+  const clearBtn = $("clearBtn");
+  const statusEl = $("status");
+  const canvas = $("canvas");
+  const ctx = canvas.getContext("2d");
+  const video = $("video");
+  const downloadBox = $("downloadBox");
+  const downloadLink = $("downloadLink");
+  const openTabBtn = $("openTabBtn");
+  const copyDataBtn = $("copyDataBtn");
+  const fileInfo = $("fileInfo");
+
+  let currentBlobUrl = null;
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.style.color = isError ? "#ff7a7a" : "#22c55e";
+  }
+
+  function getDimensions(aspect) {
+    if (aspect === "9:16") return { w: 720, h: 1280 };
+    if (aspect === "1:1") return { w: 1024, h: 1024 };
+    return { w: 1280, h: 720 };
+  }
+
+  function pickMimeType() {
+    const candidates = [
+      "video/mp4;codecs=h264",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm"
+    ];
+    for (const c of candidates) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return "";
+  }
+
+  function fileExtension(mime) {
+    return mime.includes("mp4") ? "mp4" : "webm";
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Image failed to load"));
+      img.src = src;
+    });
+  }
+
+  function animateImage(img, w, h, seconds, fps) {
+    return new Promise((resolve) => {
+      const totalFrames = Math.max(1, Math.round(seconds * fps));
+      let frame = 0;
+      const startScale = 1;
+      const endScale = 1.12;
+      const panX = (Math.random() - 0.5) * 60;
+      const panY = (Math.random() - 0.5) * 60;
+
+      function draw() {
+        const t = frame / totalFrames;
+        const scale = startScale + (endScale - startScale) * t;
+        const dw = w * scale;
+        const dh = h * scale;
+        const dx = (w - dw) / 2 + panX * t;
+        const dy = (h - dh) / 2 + panY * t;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, dx, dy, dw, dh);
+        frame++;
+        if (frame <= totalFrames) {
+          requestAnimationFrame(draw);
+        } else {
+          resolve();
+        }
+      }
+      requestAnimationFrame(draw);
+    });
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  }
+
+  async function generateVideo() {
+    const basePrompt = promptEl.value.trim();
+    if (!basePrompt) {
+      setStatus("Please enter a video description.", true);
+      promptEl.focus();
+      return;
+    }
+
+    if (!window.MediaRecorder) {
+      setStatus("Your browser does not support MediaRecorder. Use Chrome, Edge, or Firefox.", true);
+      return;
+    }
+
+    generateBtn.disabled = true;
+    downloadBox.classList.add("hidden");
+    video.classList.add("hidden");
+    if (currentBlobUrl) {
+      URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = null;
+    }
+    setStatus("Preparing...");
+
+    const style = styleEl.value;
+    const aspect = aspectEl.value;
+    const scenes = parseInt(scenesEl.value, 10);
+    const duration = parseFloat(durationEl.value);
+    const fps = parseInt(fpsEl.value, 10);
+    const { w, h } = getDimensions(aspect);
+
+    canvas.width = w;
+    canvas.height = h;
+
+    const stream = canvas.captureStream(fps);
+    const mimeType = pickMimeType();
+    let recorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+    } catch (e) {
+      recorder = new MediaRecorder(stream);
+    }
+
+    const actualMime = recorder.mimeType || mimeType || "video/webm";
+    const ext = fileExtension(actualMime);
+
+    const chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+
+    const recordedBlob = new Promise((resolve) => {
+      recorder.onstop = () => resolve(new Blob(chunks, { type: actualMime }));
+    });
+
+    recorder.start();
+
+    try {
+      for (let i = 0; i < scenes; i++) {
+        setStatus(`Generating scene ${i + 1} of ${scenes}...`);
+        const seed = Math.floor(Math.random() * 1000000);
+        const fullPrompt = `${basePrompt}, ${style} style, scene ${i + 1}`;
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&nologo=true&seed=${seed}`;
+        const img = await loadImage(url);
+        setStatus(`Recording scene ${i + 1} of ${scenes}...`);
+        await animateImage(img, w, h, duration, fps);
+      }
+
+      recorder.stop();
+      const blob = await recordedBlob;
+
+      if (!blob || blob.size === 0) {
+        throw new Error("Recording produced an empty file");
+      }
+
+      const url = URL.createObjectURL(blob);
+      currentBlobUrl = url;
+
+      video.src = url;
+      video.classList.remove("hidden");
+
+      const filename = `ai-video-${Date.now()}.${ext}`;
+      downloadLink.href = url;
+      downloadLink.download = filename;
+      downloadLink.setAttribute("download", filename);
+
+      openTabBtn.onclick = () => {
+        window.open(url, "_blank", "noopener");
+      };
+
+      copyDataBtn.onclick = async () => {
+        try {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            try {
+              await navigator.clipboard.writeText(reader.result);
+              setStatus("Data URL copied to clipboard.");
+            } catch (_) {
+              setStatus("Clipboard blocked. Use Download instead.", true);
+            }
+          };
+          reader.readAsDataURL(blob);
+        } catch (_) {
+          setStatus("Could not copy data URL.", true);
+        }
+      };
+
+      fileInfo.textContent = `Format: ${actualMime} • Size: ${formatSize(blob.size)} • File: ${filename}`;
+      downloadBox.classList.remove("hidden");
+      setStatus("Video ready! Use the download button below.");
+
+      downloadBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (err) {
+      try { recorder.stop(); } catch (_) {}
+      console.error(err);
+      setStatus("Error: " + err.message + ". Try again or reduce scenes.", true);
+    } finally {
+      generateBtn.disabled = false;
+    }
+  }
+
+  generateBtn.addEventListener("click", generateVideo);
+
+  clearBtn.addEventListener("click", () => {
+    promptEl.value = "";
+    video.classList.add("hidden");
+    video.removeAttribute("src");
+    downloadBox.classList.add("hidden");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (currentBlobUrl) {
+      URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = null;
+    }
+    setStatus("");
+  });
+})();
+</script>
+</body>
+</html>
